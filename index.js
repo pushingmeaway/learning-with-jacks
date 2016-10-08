@@ -14,7 +14,9 @@ const connection = mysql.createConnection({
 connection.connect()
 
 const router = new director.http.Router()
-const env = nunjucks.configure("templates")
+const env = nunjucks.configure("templates", {
+  autoescape: false
+})
 
 router.get("/", function() {
   this.res.end(env.render("home.html"))
@@ -66,22 +68,37 @@ router.post("/register", function() {
         "${this.req.body.bio}"
       )`
 
-  connection.query(insertQuery, function(err, res) {
+  connection.query(insertQuery, (err, res) => {
     const insertId = res.insertId
 
-    randomSegment(function(segment) {
+    randomSegment((segment) => {
       const updateQuery =
         `UPDATE users SET segment = "${segment}" where id = ${insertId}`
 
-      connection.query(updateQuery)
+      connection.query(updateQuery, () => {
+        this.res.writeHead(302, {
+          "Location": `/profile/${segment}`
+        })
+
+        this.res.end()
+      })
     })
   })
-
-  this.res.end("hello")
 })
 
-router.get("/profile/:segment", function() {
-  this.res.end("profile page")
+router.get("/profile/:segment", function(segment) {
+  const selectQuery = `SELECT * FROM users WHERE segment = "${segment}"`
+
+  connection.query(selectQuery, (err, res) => {
+    if (res.length < 1) {
+      this.res.writeHead(404)
+      this.res.end()
+    } else {
+      this.res.end(env.render("profile.html", {
+        "user": res[0]
+      }))
+    }
+  })
 })
 
 router.get("/login", function() {
