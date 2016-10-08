@@ -24,12 +24,19 @@ router.get("/register", function() {
   this.res.end(env.render("register.html"))
 })
 
+const randomNumber = function() {
+    const randomHex = crypto.randomBytes(8).toString("hex")
+    const randomFloat = ("0." + parseInt(randomHex, 16))
+
+    return parseFloat(randomFloat.replace(/(^0)|(0$)/g, ""))
+}
+
 const randomIntBetween = function(min, max) {
-  return Math.round(Math.random() * (max - min) + min)
+  return Math.round(randomNumber() * (max - min) + min)
 }
 
 const randomSegment = function(then) {
-  const segment = randomIntBetween(1, 1000000)
+  const segment = randomIntBetween(1, 1000000).toString(36)
   const query = `SELECT * FROM users WHERE segment = "${segment}"`
 
   connection.query(query, function(err, res) {
