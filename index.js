@@ -2,6 +2,7 @@ const http = require("http")
 const director = require("director")
 const nunjucks = require("nunjucks")
 const mysql = require("mysql")
+const crypto = require("crypto")
 
 const connection = mysql.createConnection({
   "host": "127.0.0.1",
@@ -23,7 +24,22 @@ router.get("/register", function() {
   this.res.end(env.render("register.html"))
 })
 
-const crypto = require("crypto")
+const randomIntBetween = function(min, max) {
+  return Math.round(Math.random() * (max - min) + min)
+}
+
+const randomSegment = function(then) {
+  const segment = randomIntBetween(1, 1000000)
+  const query = `SELECT * FROM users WHERE segment = "${segment}"`
+
+  connection.query(query, function(err, res) {
+    if (res.length > 0) {
+      return randomSegment(then)
+    }
+
+    return then(segment.toString(36))
+  })
+}
 
 router.post("/register", function() {
   // TODO: save user and redirect to profile
@@ -43,7 +59,16 @@ router.post("/register", function() {
         "${this.req.body.bio}"
       )`
 
-  connection.query(insertQuery)
+  connection.query(insertQuery, function(err, res) {
+    const insertId = res.insertId
+
+    randomSegment(function(segment) {
+      const updateQuery =
+        `UPDATE users SET segment = "${segment}" where id = ${insertId}`
+
+      connection.query(updateQuery)
+    })
+  })
 
   this.res.end("hello")
 })
