@@ -23,20 +23,29 @@ router.get("/register", function() {
   this.res.end(env.render("register.html"))
 })
 
+const crypto = require("crypto")
+
 router.post("/register", function() {
   // TODO: save user and redirect to profile
 
-  connection.query(`
-    INSERT INTO users (
-      email,
-      password,
-      bio
-    ) VALUES (
-      "${this.req.body.email}",
-      "${this.req.body.password}",
-      "${this.req.body.bio}"
-    )
-  `)
+  const password = crypto.createHash("md5")
+    .update(this.req.body.password)
+    .digest("hex")
+
+  const insertQuery =
+    `INSERT INTO users (
+        email,
+        password,
+        bio
+      ) VALUES (
+        "${this.req.body.email}",
+        "${password}",
+        "${this.req.body.bio}"
+      )`
+
+  connection.query(insertQuery)
+
+  this.res.end("hello")
 })
 
 router.get("/profile/:segment", function() {
