@@ -14,8 +14,9 @@ const connection = mysql.createConnection({
 connection.connect()
 
 const router = new director.http.Router()
+
 const env = nunjucks.configure("templates", {
-  autoescape: false
+  "autoescape": false
 })
 
 router.get("/", function() {
